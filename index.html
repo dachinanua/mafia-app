@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Mafia Roles</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      min-height: 100vh; min-height: 100dvh;
+      background: #0a0a0f;
+      font-family: Georgia, serif;
+      color: #e8dcc8;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px 20px;
+      background-image: radial-gradient(ellipse at 20% 50%, #1a0a1a 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a0a 0%, transparent 60%);
+    }
+    .screen { width: 100%; max-width: 460px; display: none; flex-direction: column; align-items: center; }
+    .screen.active { display: flex; }
+
+    .lang-toggle {
+      position: fixed; top: 16px; right: 16px;
+      background: #1a1a2a; border: 1px solid #3a3a3a;
+      border-radius: 20px; padding: 6px 14px;
+      font-size: 12px; letter-spacing: 2px; color: #c9a84c;
+      cursor: pointer; font-family: Georgia, serif;
+      z-index: 999;
+    }
+
+    .header { text-align: center; margin-bottom: 28px; }
+    .header .logo { width: 80px; height: 80px; margin: 0 auto 12px; display: block; border-radius: 50%; border: 2px solid #c9a84c; }
+    .header h1 { font-size: 32px; letter-spacing: 6px; color: #c9a84c; font-weight: normal; text-transform: uppercase; }
+    .header p { color: #7a6a5a; font-size: 12px; letter-spacing: 3px; margin-top: 6px; }
+
+    .card { background: #111118; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px 24px; margin-bottom: 14px; width: 100%; }
+    .label { font-size: 10px; letter-spacing: 3px; color: #7a6a5a; text-transform: uppercase; display: block; margin-bottom: 14px; }
+    .count-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
+    .count-val { font-size: 40px; font-weight: bold; color: #c9a84c; min-width: 56px; text-align: center; }
+    .btn-round { width: 46px; height: 46px; border-radius: 50%; background: #1a1a2a; border: 1px solid #3a3a3a; color: #e8dcc8; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .btn-xs { width: 34px; height: 34px; border-radius: 8px; background: #1a1a1a; border: 1px solid #3a3a3a; color: #e8dcc8; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .role-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+    .role-name { display: flex; align-items: center; gap: 9px; font-size: 15px; }
+    .role-controls { display: flex; align-items: center; gap: 10px; }
+    .role-count { min-width: 26px; text-align: center; font-size: 17px; }
+    .divider { border-top: 1px solid #2a2a2a; margin-top: 14px; padding-top: 14px; }
+    .error-msg { color: #c0392b; font-size: 12px; text-align: center; margin-top: 10px; display: none; }
+    .btn-row { display: flex; gap: 12px; width: 100%; margin-top: 6px; }
+    .btn-primary { flex: 1; padding: 16px 12px; background: #c9a84c; color: #0a0a0f; border: none; border-radius: 12px; font-size: 14px; letter-spacing: 2px; font-family: Georgia, serif; cursor: pointer; font-weight: bold; }
+    .btn-primary:disabled { opacity: 0.4; cursor: default; }
+    .btn-ghost { flex: 1; padding: 16px 12px; background: transparent; border: 1px solid #3a3a3a; color: #7a6a5a; border-radius: 12px; font-size: 12px; letter-spacing: 2px; font-family: Georgia, serif; cursor: pointer; }
+    .btn-link { background: none; border: none; color: #555; font-size: 12px; cursor: pointer; letter-spacing: 2px; font-family: Georgia, serif; margin-top: 14px; padding: 8px; }
+
+    .seating-title { font-size: 20px; letter-spacing: 4px; color: #c9a84c; font-weight: normal; margin-bottom: 4px; }
+    .seating-sub { color: #7a6a5a; font-size: 13px; margin-bottom: 32px; }
+    .tap-circle { width: 220px; height: 220px; border-radius: 50%; background: #111118; border: 3px solid #c9a84c; display: flex; align-items: center; justify-content: center; flex-direction: column; margin: 0 auto 32px; cursor: pointer; box-shadow: 0 0 40px #c9a84c33; transition: all 0.35s; user-select: none; }
+    .tap-circle.done { background: #0f1f0f; border-color: #27ae60; box-shadow: 0 0 40px #27ae6033; cursor: default; }
+    .tap-circle .big-num { font-size: 68px; font-weight: bold; color: #c9a84c; line-height: 1; }
+    .tap-circle .seat-label { font-size: 12px; color: #7a6a5a; letter-spacing: 3px; margin-top: 6px; }
+    .tap-circle .hint-top { font-size: 14px; color: #c9a84c; letter-spacing: 2px; }
+    .tap-circle .hint-bot { font-size: 14px; color: #7a6a5a; letter-spacing: 2px; margin-top: 2px; }
+    .seats-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 24px; width: 100%; }
+    .seat-dot { width: 38px; height: 38px; border-radius: 8px; background: #111118; border: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #3a3a3a; transition: all 0.3s; }
+    .seat-dot.taken { background: #c9a84c18; border-color: #c9a84c; color: #c9a84c; }
+
+    .card-counter { color: #7a6a5a; font-size: 13px; letter-spacing: 2px; margin-bottom: 20px; }
+    .role-card { width: 100%; min-height: 340px; border-radius: 24px; background: #111118; border: 2px solid #2a2a2a; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: background 0.4s, border-color 0.4s, box-shadow 0.4s; padding: 40px 30px; }
+    .role-card .c-icon { font-size: 72px; margin-bottom: 16px; }
+    .role-card .c-role { font-size: 26px; letter-spacing: 4px; font-weight: bold; text-transform: uppercase; }
+    .role-card .c-tap { font-size: 12px; color: #555; margin-top: 24px; letter-spacing: 2px; }
+    .role-card .c-deck { font-size: 52px; margin-bottom: 14px; }
+    .role-card .c-hint { font-size: 13px; color: #555; letter-spacing: 3px; }
+    .progress-dots { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 24px; max-width: 100%; }
+    .dot { height: 8px; border-radius: 4px; background: #2a2a2a; transition: all 0.3s; }
+
+    #screen-done { text-align: center; }
+    #screen-done .done-icon { font-size: 72px; margin-bottom: 16px; }
+    #screen-done h2 { font-size: 26px; letter-spacing: 5px; color: #c9a84c; font-weight: normal; margin-bottom: 10px; }
+    #screen-done p { color: #7a6a5a; font-size: 14px; margin-bottom: 40px; line-height: 1.6; }
+    #screen-done .btn-primary { flex: none; width: 100%; }
+  </style>
+</head>
+<body>
+
+<button class="lang-toggle" onclick="toggleLang()" id="lang-btn">GEO</button>
+
+<!-- SETUP -->
+<div class="screen active" id="screen-setup">
+  <div class="header">
+    <img class="logo" src="icon-192.png" alt="Mafia Logo" />
+    <h1 id="t-title">Mafia</h1>
+    <p id="t-subtitle">ROLE ASSIGNMENT</p>
+  </div>
+  <div class="card">
+    <span class="label" id="t-players">Number of Players</span>
+    <div class="count-row">
+      <button class="btn-round" onclick="changePlayers(-1)">−</button>
+      <span class="count-val" id="player-display">11</span>
+      <button class="btn-round" onclick="changePlayers(1)">+</button>
+    </div>
+  </div>
+  <div class="card">
+    <span class="label" id="t-roles">Role Distribution</span>
+    <div id="roles-container"></div>
+    <div class="divider role-row">
+      <div class="role-name">
+        <span>👤</span>
+        <span style="color:#2980b9" id="t-civilian">Civilian</span>
+        <span style="font-size:11px;color:#444;margin-left:4px" id="t-auto">(auto-filled)</span>
+      </div>
+      <span id="civilian-display" style="font-size:17px">6</span>
+    </div>
+    <div class="error-msg" id="error-msg">⚠ <span id="t-error">Too many roles assigned!</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-ghost" onclick="skipSeating()" id="t-skip">SKIP SEATING</button>
+    <button class="btn-primary" id="btn-go-seating" onclick="goSeating()"><span id="t-setseating">SET SEATING →</span></button>
+  </div>
+</div>
+
+<!-- SEATING -->
+<div class="screen" id="screen-seating" style="text-align:center">
+  <h2 class="seating-title" id="t-seating-title">Seating Order</h2>
+  <p class="seating-sub" id="seating-progress">0 / 11 players seated</p>
+  <div class="tap-circle" id="tap-circle" onclick="tapSeat()">
+    <div id="circle-inner">
+      <div class="hint-top" id="t-tapto">TAP TO</div>
+      <div class="hint-bot" id="t-getseat">GET SEAT</div>
+    </div>
+  </div>
+  <div class="seats-grid" id="seats-grid"></div>
+  <button class="btn-primary" id="btn-to-cards" style="display:none;width:100%" onclick="goCards()"><span id="t-revealroles">REVEAL ROLES →</span></button>
+  <button class="btn-link" onclick="goSetup()" id="t-back">← Back to Setup</button>
+</div>
+
+<!-- CARDS -->
+<div class="screen" id="screen-cards" style="text-align:center;width:100%;max-width:460px">
+  <div class="card-counter" id="card-counter">PLAYER 1 OF 11</div>
+  <div class="role-card" id="role-card" onclick="tapCard()">
+    <div class="c-deck">🎴</div>
+    <div class="c-hint" id="t-tapreveal">TAP TO REVEAL</div>
+  </div>
+  <div class="progress-dots" id="progress-dots"></div>
+</div>
+
+<!-- DONE -->
+<div class="screen" id="screen-done">
+  <div class="done-icon">🎭</div>
+  <h2 id="t-gameon">GAME ON</h2>
+  <p id="t-allroles">All roles have been assigned.<br>Good luck, everyone!</p>
+  <button class="btn-primary" onclick="restart()" id="t-newgame">START NEW GAME</button>
+</div>
+
+<script>
+  /* ── TRANSLATIONS ── */
+  const T = {
+    en: {
+      title: "Mafia", subtitle: "ROLE ASSIGNMENT",
+      players: "Number of Players", roles: "Role Distribution",
+      civilian: "Civilian", auto: "(auto-filled)",
+      error: "Too many roles assigned! Reduce roles or increase player count.",
+      skip: "SKIP SEATING", setseating: "SET SEATING →",
+      seatingTitle: "Seating Order",
+      tapto: "TAP TO", getseat: "GET SEAT", yourseat: "YOUR SEAT",
+      revealroles: "REVEAL ROLES →", back: "← Back to Setup",
+      tapreveal: "TAP TO REVEAL", taphide: "TAP TO HIDE",
+      playerOf: (i, n) => `PLAYER ${i} OF ${n}`,
+      seated: (a, b) => `${a} / ${b} players seated`,
+      gameon: "GAME ON",
+      allroles: "All roles have been assigned.<br>Good luck, everyone!",
+      newgame: "START NEW GAME",
+      langBtn: "GEO",
+      roleNames: { Mafia:"Mafia", Don:"Don", "Serial Killer":"Serial Killer", Sheriff:"Sheriff", Doctor:"Doctor", Civilian:"Civilian" }
+    },
+    ka: {
+      title: "მაფია", subtitle: "როლების განაწილება",
+      players: "მოთამაშეების რაოდენობა", roles: "როლების განაწილება",
+      civilian: "მშვიდობიანი", auto: "(ავტომატური)",
+      error: "ძალიან ბევრი როლი! შეამცირეთ როლები ან გაზარდეთ მოთამაშეები.",
+      skip: "ადგილების გამოტოვება", setseating: "ადგილების განაწილება →",
+      seatingTitle: "ადგილების მიმდევრობა",
+      tapto: "შეეხე", getseat: "ადგილისთვის", yourseat: "შენი ადგილი",
+      revealroles: "როლების გამოვლენა →", back: "← პარამეტრებზე დაბრუნება",
+      tapreveal: "შეეხე გამოსავლენად", taphide: "შეეხე დასამალად",
+      playerOf: (i, n) => `მოთამაშე ${i} / ${n}`,
+      seated: (a, b) => `${a} / ${b} მოთამაშე დასხდა`,
+      gameon: "თამაში იწყება",
+      allroles: "ყველა როლი დანიშნულია.<br>წარმატება!",
+      newgame: "ახალი თამაში",
+      langBtn: "ENG",
+      roleNames: { Mafia:"მაფია", Don:"დონი", "Serial Killer":"მანიაკი", Sheriff:"შერიფი", Doctor:"ექიმი", Civilian:"მშვიდობიანი" }
+    }
+  };
+
+  let lang = 'en';
+
+  function toggleLang() {
+    lang = lang === 'en' ? 'ka' : 'en';
+    applyLang();
+    renderSetup();
+    if (document.getElementById('screen-seating').classList.contains('active')) renderSeating();
+    if (document.getElementById('screen-cards').classList.contains('active')) renderCard();
+  }
+
+  function applyLang() {
+    const t = T[lang];
+    document.getElementById('lang-btn').textContent = t.langBtn;
+    document.getElementById('t-title').textContent = t.title;
+    document.getElementById('t-subtitle').textContent = t.subtitle;
+    document.getElementById('t-players').textContent = t.players;
+    document.getElementById('t-roles').textContent = t.roles;
+    document.getElementById('t-civilian').textContent = t.civilian;
+    document.getElementById('t-auto').textContent = t.auto;
+    document.getElementById('t-error').textContent = t.error;
+    document.getElementById('t-skip').textContent = t.skip;
+    document.getElementById('t-setseating').textContent = t.setseating;
+    document.getElementById('t-seating-title').textContent = t.seatingTitle;
+    document.getElementById('t-revealroles').textContent = t.revealroles;
+    document.getElementById('t-back').textContent = t.back;
+    document.getElementById('t-gameon').textContent = t.gameon;
+    document.getElementById('t-allroles').innerHTML = t.allroles;
+    document.getElementById('t-newgame').textContent = t.newgame;
+  }
+
+  /* ── DATA ── */
+  const ROLES = ["Mafia", "Don", "Serial Killer", "Sheriff", "Doctor"];
+  const ICONS = { Mafia:"🔫", Don:"👑", "Serial Killer":"🔪", Sheriff:"⭐", Doctor:"💊", Civilian:"👤" };
+  const COLORS = { Mafia:"#c0392b", Don:"#8e44ad", "Serial Killer":"#c0392b", Sheriff:"#f39c12", Doctor:"#27ae60", Civilian:"#2980b9" };
+  const GLOW  = { Mafia:"#c0392b55", Don:"#8e44ad55", "Serial Killer":"#c0392b55", Sheriff:"#f39c1255", Doctor:"#27ae6055", Civilian:"#2980b955" };
+  const BG    = { Mafia:"#200808", Don:"#180820", "Serial Killer":"#080c14", Sheriff:"#201400", Doctor:"#081a0c", Civilian:"#081020" };
+
+  let S = {
+    playerCount: 11,
+    roleCounts: { Mafia:2, Don:1, "Serial Killer":1, Sheriff:1, Doctor:1 },
+    assignedRoles: [],
+    takenNumbers: [],
+    lastNumber: null,
+    cardIndex: 0,
+    cardVisible: false,
+  };
+
+  /* ── HELPERS ── */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+  }
+  function totalAssigned() { return Object.values(S.roleCounts).reduce((a,b) => a+b, 0); }
+  function civilianCount() { return Math.max(0, S.playerCount - totalAssigned()); }
+  function isValid() { return totalAssigned() <= S.playerCount && S.playerCount >= 3; }
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a;
+  }
+  function buildRoleList() {
+    const list = [];
+    ROLES.forEach(r => { for (let i=0; i<S.roleCounts[r]; i++) list.push(r); });
+    for (let i=0; i<civilianCount(); i++) list.push("Civilian");
+    return shuffle(list);
+  }
+
+  /* ── SETUP ── */
+  function renderSetup() {
+    const t = T[lang];
+    document.getElementById('player-display').textContent = S.playerCount;
+    document.getElementById('civilian-display').textContent = civilianCount();
+    const container = document.getElementById('roles-container');
+    container.innerHTML = '';
+    ROLES.forEach(role => {
+      const key = role.replace(/ /g, '_');
+      const row = document.createElement('div');
+      row.className = 'role-row';
+      row.innerHTML = `
+        <div class="role-name">
+          <span>${ICONS[role]}</span>
+          <span style="color:${COLORS[role]}">${t.roleNames[role]}</span>
+        </div>
+        <div class="role-controls">
+          <button class="btn-xs" onclick="changeRole('${role}',-1)">−</button>
+          <span class="role-count" id="rc-${key}">${S.roleCounts[role]}</span>
+          <button class="btn-xs" onclick="changeRole('${role}',1)">+</button>
+        </div>`;
+      container.appendChild(row);
+    });
+    const err = document.getElementById('error-msg');
+    err.style.display = totalAssigned() > S.playerCount ? 'block' : 'none';
+    document.getElementById('btn-go-seating').disabled = !isValid();
+  }
+
+  function changePlayers(d) { S.playerCount = Math.max(3, Math.min(20, S.playerCount+d)); renderSetup(); }
+  function changeRole(role, d) { S.roleCounts[role] = Math.max(0, S.roleCounts[role]+d); renderSetup(); }
+  function goSetup() { showScreen('setup'); renderSetup(); }
+
+  /* ── SEATING ── */
+  function goSeating() {
+    if (!isValid()) return;
+    S.assignedRoles = buildRoleList();
+    S.takenNumbers = []; S.lastNumber = null;
+    renderSeating(); showScreen('seating');
+  }
+  function skipSeating() {
+    if (!isValid()) return;
+    S.assignedRoles = buildRoleList();
+    prepCards(); showScreen('cards');
+  }
+  function renderSeating() {
+    const t = T[lang];
+    const n = S.playerCount, seated = S.takenNumbers.length, done = seated >= n;
+    document.getElementById('seating-progress').textContent = t.seated(seated, n);
+    const circle = document.getElementById('tap-circle');
+    const inner  = document.getElementById('circle-inner');
+    circle.className = 'tap-circle' + (done ? ' done' : '');
+    if (done) {
+      inner.innerHTML = '<span style="font-size:44px">✓</span>';
+    } else if (S.lastNumber === null) {
+      inner.innerHTML = `<div class="hint-top">${t.tapto}</div><div class="hint-bot">${t.getseat}</div>`;
+    } else {
+      inner.innerHTML = `<div class="big-num">${S.lastNumber}</div><div class="seat-label">${t.yourseat}</div>`;
+    }
+    const grid = document.getElementById('seats-grid');
+    grid.innerHTML = '';
+    for (let i=1; i<=n; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'seat-dot' + (S.takenNumbers.includes(i) ? ' taken' : '');
+      dot.textContent = i;
+      grid.appendChild(dot);
+    }
+    document.getElementById('btn-to-cards').style.display = done ? 'block' : 'none';
+  }
+  function tapSeat() {
+    if (S.takenNumbers.length >= S.playerCount) return;
+    const available = [];
+    for (let i=1; i<=S.playerCount; i++) if (!S.takenNumbers.includes(i)) available.push(i);
+    const num = available[Math.floor(Math.random()*available.length)];
+    S.lastNumber = num; S.takenNumbers.push(num);
+    renderSeating();
+  }
+
+  /* ── CARDS ── */
+  function goCards() { prepCards(); showScreen('cards'); }
+  function prepCards() { S.cardIndex=0; S.cardVisible=false; renderCard(); }
+  function renderCard() {
+    const t = T[lang];
+    const n = S.playerCount, i = S.cardIndex, role = S.assignedRoles[i];
+    document.getElementById('card-counter').textContent = t.playerOf(i+1, n);
+    const card = document.getElementById('role-card');
+    if (S.cardVisible) {
+      card.style.background = BG[role];
+      card.style.borderColor = COLORS[role];
+      card.style.boxShadow = `0 0 50px ${GLOW[role]}`;
+      card.innerHTML = `<div class="c-icon">${ICONS[role]}</div><div class="c-role" style="color:${COLORS[role]}">${t.roleNames[role]}</div><div class="c-tap">${t.taphide}</div>`;
+    } else {
+      card.style.background = '#111118'; card.style.borderColor = '#2a2a2a'; card.style.boxShadow = 'none';
+      card.innerHTML = `<div class="c-deck">🎴</div><div class="c-hint">${t.tapreveal}</div>`;
+    }
+    const dots = document.getElementById('progress-dots');
+    dots.innerHTML = '';
+    S.assignedRoles.forEach((_,idx) => {
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.style.width = idx===i ? '22px' : '8px';
+      dot.style.background = idx<=i ? '#c9a84c' : '#2a2a2a';
+      dots.appendChild(dot);
+    });
+  }
+  function tapCard() {
+    if (!S.cardVisible) { S.cardVisible=true; renderCard(); }
+    else {
+      S.cardVisible=false;
+      if (S.cardIndex+1 >= S.playerCount) { showScreen('done'); }
+      else { S.cardIndex++; renderCard(); }
+    }
+  }
+
+  function restart() { goSetup(); }
+
+  /* ── INIT ── */
+  renderSetup();
+  applyLang();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/mafia-app/sw.js').catch(()=>{});
+  }
+</script>
+</body>
+</html>
