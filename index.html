@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Mafia Roles</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      min-height: 100vh; min-height: 100dvh;
+      background: #0a0a0f;
+      font-family: Georgia, serif;
+      color: #e8dcc8;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px 20px;
+      background-image: radial-gradient(ellipse at 20% 50%, #1a0a1a 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a0a 0%, transparent 60%);
+    }
+    .screen { width: 100%; max-width: 460px; display: none; flex-direction: column; align-items: center; }
+    .screen.active { display: flex; }
+    .header { text-align: center; margin-bottom: 28px; }
+    .header .icon { font-size: 48px; margin-bottom: 8px; }
+    .header h1 { font-size: 32px; letter-spacing: 6px; text-transform: uppercase; color: #c9a84c; font-weight: normal; }
+    .header p { color: #7a6a5a; font-size: 12px; letter-spacing: 3px; margin-top: 6px; }
+    .card { background: #111118; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px 24px; margin-bottom: 14px; width: 100%; }
+    .label { font-size: 10px; letter-spacing: 3px; color: #7a6a5a; text-transform: uppercase; display: block; margin-bottom: 14px; }
+    .count-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
+    .count-val { font-size: 40px; font-weight: bold; color: #c9a84c; min-width: 56px; text-align: center; }
+    .btn-round { width: 46px; height: 46px; border-radius: 50%; background: #1a1a2a; border: 1px solid #3a3a3a; color: #e8dcc8; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .btn-xs { width: 34px; height: 34px; border-radius: 8px; background: #1a1a1a; border: 1px solid #3a3a3a; color: #e8dcc8; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .role-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+    .role-name { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+    .role-controls { display: flex; align-items: center; gap: 12px; }
+    .role-count { min-width: 22px; text-align: center; font-size: 17px; }
+    .divider { border-top: 1px solid #2a2a2a; margin-top: 14px; padding-top: 14px; }
+    .btn-primary { width: 100%; padding: 16px; background: #c9a84c; color: #0a0a0f; border: none; border-radius: 12px; font-size: 14px; letter-spacing: 3px; font-family: Georgia, serif; cursor: pointer; font-weight: bold; margin-top: 6px; }
+    .btn-primary:disabled { opacity: 0.35; cursor: default; }
+    .btn-ghost { width: 100%; padding: 14px; background: transparent; border: 1px solid #3a3a3a; color: #7a6a5a; border-radius: 12px; font-size: 13px; letter-spacing: 3px; font-family: Georgia, serif; cursor: pointer; margin-top: 8px; }
+    .btn-link { background: none; border: none; color: #555; font-size: 12px; cursor: pointer; letter-spacing: 2px; font-family: Georgia, serif; margin-top: 14px; padding: 8px; }
+    .error-msg { color: #c0392b; font-size: 12px; text-align: center; margin-top: 10px; display: none; }
+    .seating-title { font-size: 20px; letter-spacing: 4px; color: #c9a84c; font-weight: normal; margin-bottom: 4px; }
+    .seating-sub { color: #7a6a5a; font-size: 13px; margin-bottom: 32px; }
+    .tap-circle { width: 220px; height: 220px; border-radius: 50%; background: #1a1a2a; border: 3px solid #c9a84c; display: flex; align-items: center; justify-content: center; flex-direction: column; margin-bottom: 32px; cursor: pointer; box-shadow: 0 0 32px #c9a84c33; transition: all 0.3s; user-select: none; }
+    .tap-circle.done { background: #1a2a1a; border-color: #27ae60; box-shadow: 0 0 32px #27ae6033; }
+    .big-num { font-size: 68px; font-weight: bold; color: #c9a84c; line-height: 1; }
+    .tap-hint { font-size: 14px; color: #c9a84c; letter-spacing: 3px; }
+    .tap-sub { font-size: 14px; color: #7a6a5a; letter-spacing: 3px; }
+    .tap-label { font-size: 12px; color: #7a6a5a; letter-spacing: 2px; margin-top: 4px; }
+    .seats-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 24px; width: 100%; }
+    .seat-dot { width: 38px; height: 38px; border-radius: 8px; background: #1a1a1a; border: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #3a3a3a; transition: all 0.25s; }
+    .seat-dot.taken { background: #c9a84c22; border-color: #c9a84c88; color: #c9a84c; }
+    .card-counter { color: #7a6a5a; font-size: 13px; letter-spacing: 2px; margin-bottom: 16px; }
+    .role-card { width: 100%; min-height: 340px; border-radius: 20px; background: #111118; border: 2px solid #2a2a2a; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: background 0.35s, border-color 0.35s, box-shadow 0.35s; padding: 40px 32px; }
+    .card-big-icon { font-size: 80px; margin-bottom: 16px; line-height: 1; }
+    .card-role-name { font-size: 26px; letter-spacing: 4px; font-weight: bold; text-transform: uppercase; }
+    .card-tap { font-size: 12px; color: #555; margin-top: 28px; letter-spacing: 2px; }
+    .card-face-icon { font-size: 52px; margin-bottom: 14px; }
+    .card-face-txt { font-size: 13px; color: #555; letter-spacing: 3px; }
+    .progress-dots { display: flex; gap: 6px; justify-content: center; margin-top: 24px; flex-wrap: wrap; max-width: 100%; }
+    .dot { height: 8px; border-radius: 4px; background: #2a2a2a; transition: all 0.3s; flex-shrink: 0; }
+    #screen-done { text-align: center; }
+    #screen-done h2 { font-size: 26px; letter-spacing: 4px; color: #c9a84c; font-weight: normal; margin: 16px 0 10px; }
+    #screen-done p { color: #7a6a5a; margin-bottom: 40px; font-size: 15px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<div class="screen active" id="screen-setup">
+  <div class="header">
+    <div class="icon">🎭</div>
+    <h1>MAFIA</h1>
+    <p>ROLE ASSIGNMENT</p>
+  </div>
+  <div class="card">
+    <span class="label">Number of Players</span>
+    <div class="count-row">
+      <button class="btn-round" onclick="changePlayer(-1)">−</button>
+      <span class="count-val" id="player-count">8</span>
+      <button class="btn-round" onclick="changePlayer(1)">+</button>
+    </div>
+  </div>
+  <div class="card">
+    <span class="label">Role Distribution</span>
+    <div id="roles-list"></div>
+    <div class="divider role-row">
+      <div class="role-name">
+        <span>👤</span>
+        <span style="color:#2980b9">Civilian</span>
+        <span style="font-size:11px;color:#555;margin-left:4px">(auto)</span>
+      </div>
+      <span id="civilian-count" style="font-size:17px">3</span>
+    </div>
+    <div class="error-msg" id="error-msg">⚠ Too many roles! Reduce roles or add more players.</div>
+  </div>
+  <button class="btn-primary" id="btn-seating" onclick="goSeating()">SET SEATING →</button>
+  <button class="btn-ghost" onclick="skipSeating()">SKIP SEATING</button>
+</div>
+
+<div class="screen" id="screen-seating" style="text-align:center">
+  <h2 class="seating-title">SEATING ORDER</h2>
+  <p class="seating-sub" id="seating-progress">0 / 8 players seated</p>
+  <div class="tap-circle" id="tap-circle" onclick="tapSeat()">
+    <div id="circle-content">
+      <div class="tap-hint">TAP TO</div>
+      <div class="tap-sub">GET SEAT</div>
+    </div>
+  </div>
+  <div class="seats-grid" id="seats-grid"></div>
+  <button class="btn-primary" id="btn-start-cards" style="display:none;width:100%" onclick="goCards()">REVEAL ROLES →</button>
+  <button class="btn-link" onclick="goSetup()">← BACK TO SETUP</button>
+</div>
+
+<div class="screen" id="screen-cards" style="text-align:center">
+  <div class="card-counter" id="card-counter">PLAYER 1 OF 8</div>
+  <div class="role-card" id="role-card" onclick="tapCard()">
+    <div class="card-face-icon">🎴</div>
+    <div class="card-face-txt">TAP TO REVEAL</div>
+  </div>
+  <div class="progress-dots" id="progress-dots"></div>
+</div>
+
+<div class="screen" id="screen-done">
+  <div style="font-size:72px">🎭</div>
+  <h2>GAME ON</h2>
+  <p>All roles assigned.<br>Good luck!</p>
+  <button class="btn-primary" style="max-width:320px" onclick="restart()">START NEW GAME</button>
+</div>
+
+<script>
+  const ROLES  = ["Mafia","Don","Serial Killer","Sheriff","Doctor"];
+  const ICONS  = {Mafia:"🔫",Don:"👑","Serial Killer":"🔪",Sheriff:"⭐",Doctor:"💊",Civilian:"👤"};
+  const COLORS = {Mafia:"#c0392b",Don:"#8e44ad","Serial Killer":"#e74c3c",Sheriff:"#f39c12",Doctor:"#27ae60",Civilian:"#2980b9"};
+
+  let playerCount=8, roleCounts={Mafia:2,Don:1,"Serial Killer":0,Sheriff:1,Doctor:1};
+  let assignedRoles=[], takenNumbers=[], currentNumber=null;
+  let cardIndex=0, cardVisible=false;
+
+  function totalAssigned(){return Object.values(roleCounts).reduce((a,b)=>a+b,0);}
+  function civilians(){return Math.max(0,playerCount-totalAssigned());}
+  function isValid(){return totalAssigned()<=playerCount&&playerCount>=3;}
+
+  function shuffle(arr){
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+    return a;
+  }
+
+  function buildRoles(){
+    const r=[];
+    ROLES.forEach(role=>{for(let i=0;i<roleCounts[role];i++)r.push(role);});
+    for(let i=0;i<civilians();i++)r.push("Civilian");
+    return shuffle(r);
+  }
+
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+id).classList.add('active');
+    window.scrollTo(0,0);
+  }
+
+  function renderSetup(){
+    document.getElementById('player-count').textContent=playerCount;
+    document.getElementById('civilian-count').textContent=civilians();
+    const list=document.getElementById('roles-list');
+    list.innerHTML='';
+    ROLES.forEach(role=>{
+      const row=document.createElement('div');
+      row.className='role-row';
+      const sid=role.replace(/ /g,'_');
+      row.innerHTML=`<div class="role-name"><span>${ICONS[role]}</span><span style="color:${COLORS[role]}">${role}</span></div><div class="role-controls"><button class="btn-xs" onclick="changeRole('${role}',-1)">−</button><span class="role-count" id="rc-${sid}">${roleCounts[role]}</span><button class="btn-xs" onclick="changeRole('${role}',1)">+</button></div>`;
+      list.appendChild(row);
+    });
+    document.getElementById('error-msg').style.display=totalAssigned()>playerCount?'block':'none';
+    document.getElementById('btn-seating').disabled=!isValid();
+  }
+
+  function changePlayer(d){playerCount=Math.max(3,Math.min(20,playerCount+d));renderSetup();}
+  function changeRole(role,d){roleCounts[role]=Math.max(0,roleCounts[role]+d);renderSetup();}
+  function goSetup(){showScreen('setup');renderSetup();}
+
+  function goSeating(){
+    if(!isValid())return;
+    assignedRoles=buildRoles();takenNumbers=[];currentNumber=null;
+    renderSeating();showScreen('seating');
+  }
+
+  function skipSeating(){
+    if(!isValid())return;
+    assignedRoles=buildRoles();prepCards();showScreen('cards');
+  }
+
+  function renderSeating(){
+    const n=playerCount,done=takenNumbers.length>=n;
+    document.getElementById('seating-progress').textContent=`${takenNumbers.length} / ${n} players seated`;
+    const circle=document.getElementById('tap-circle');
+    const content=document.getElementById('circle-content');
+    circle.className='tap-circle'+(done?' done':'');
+    if(done){content.innerHTML='<span style="font-size:44px">✓</span>';}
+    else if(currentNumber===null){content.innerHTML='<div class="tap-hint">TAP TO</div><div class="tap-sub">GET SEAT</div>';}
+    else{content.innerHTML=`<div class="big-num">${currentNumber}</div><div class="tap-label">YOUR SEAT</div>`;}
+    const grid=document.getElementById('seats-grid');grid.innerHTML='';
+    for(let i=1;i<=n;i++){
+      const d=document.createElement('div');
+      d.className='seat-dot'+(takenNumbers.includes(i)?' taken':'');
+      d.textContent=i;grid.appendChild(d);
+    }
+    document.getElementById('btn-start-cards').style.display=done?'block':'none';
+  }
+
+  function tapSeat(){
+    if(takenNumbers.length>=playerCount)return;
+    const avail=[];
+    for(let i=1;i<=playerCount;i++)if(!takenNumbers.includes(i))avail.push(i);
+    currentNumber=avail[Math.floor(Math.random()*avail.length)];
+    takenNumbers.push(currentNumber);renderSeating();
+  }
+
+  function goCards(){prepCards();showScreen('cards');}
+
+  function prepCards(){cardIndex=0;cardVisible=false;renderCard();}
+
+  function renderCard(){
+    const role=assignedRoles[cardIndex],color=COLORS[role];
+    document.getElementById('card-counter').textContent=`PLAYER ${cardIndex+1} OF ${playerCount}`;
+    const card=document.getElementById('role-card');
+    if(cardVisible){
+      card.style.background=color+'22';card.style.borderColor=color;card.style.boxShadow=`0 0 40px ${color}44`;
+      card.innerHTML=`<div class="card-big-icon">${ICONS[role]}</div><div class="card-role-name" style="color:${color}">${role}</div><div class="card-tap">TAP TO HIDE</div>`;
+    }else{
+      card.style.background='#111118';card.style.borderColor='#2a2a2a';card.style.boxShadow='none';
+      card.innerHTML='<div class="card-face-icon">🎴</div><div class="card-face-txt">TAP TO REVEAL</div>';
+    }
+    const dots=document.getElementById('progress-dots');dots.innerHTML='';
+    const max=Math.min(playerCount,20);
+    for(let i=0;i<max;i++){
+      const d=document.createElement('div');d.className='dot';
+      d.style.width=i===cardIndex?'20px':'8px';
+      d.style.background=i<=cardIndex?'#c9a84c':'#2a2a2a';
+      dots.appendChild(d);
+    }
+  }
+
+  function tapCard(){
+    if(!cardVisible){cardVisible=true;renderCard();}
+    else{
+      cardVisible=false;
+      if(cardIndex+1>=playerCount){showScreen('done');}
+      else{cardIndex++;renderCard();}
+    }
+  }
+
+  function restart(){goSetup();}
+  renderSetup();
+
+  // Offline support
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/mafia-app/sw.js').catch(()=>{});
+  }
+</script>
+</body>
+</html>
