@@ -1,8 +1,8 @@
 {
   "name": "Mafia Roles",
   "short_name": "Mafia",
-  "start_url": "https://manifest-c21857.tiiny.site/",
-  "scope": "https://manifest-c21857.tiiny.site/",
+  "start_url": "https://dachinanua.github.io/mafia-app/",
+  "scope": "https://dachinanua.github.io/mafia-app/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0f",
